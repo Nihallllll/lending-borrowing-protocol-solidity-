@@ -64,9 +64,27 @@ contract  LendingandBorrowing {
 
         uint256 maxBorrowAmount = (collateralBalances[msg.sender] * collateralFactorBasisPoints) / 10000;
         uint256 currentDebt = calculateInterestAccrued(msg.sender);
+
+        require(currentDebt + amount <= maxBorrowAmount);
+
+        borrowBalances[msg.sender] += amount;
+        lastInterestAccrualTimestamp[msg.sender] = block.timestamp;
+        payable(msg.sender).transfer(amount);
+        emit Borrow(msg.sender, amount);
         
     }
-    function repay() external payable {}
+    function repay() external payable {
+        require(msg.value > 0);
+        uint256 currentdebt = calculateInterestAccrued(msg.sender);
+        uint256 amountToRepay = msg.value;
+        if(amountToRepay > currentdebt){
+            amountToRepay = currentdebt;
+            payable(msg.sender).transfer(msg.value - currentdebt);
+        }
+
+        borrowBalances[msg.sender] -= amountToRepay;
+        lastInterestAccrualTimestamp[msg.sender] =block.timestamp;
+    }
     function calculateInterestAccrued(address user) public view returns (uint256) {
          if (borrowBalances[user] == 0) {
             return 0;
@@ -77,6 +95,10 @@ contract  LendingandBorrowing {
 
         return borrowBalances[user] + interest;
     }
-    function getMaxBorrowAmount(address user) external view returns (uint256) {}
-    function getTotalLiquidity() external view returns (uint256) {}
+    function getMaxBorrowAmount(address user) external view returns (uint256) {
+        return (collateralBalances[user] * collateralFactorBasisPoints)/10000;
+    }
+    function getTotalLiquidity() external view returns (uint256) {
+        return address(this).balance;
+    }
 }
