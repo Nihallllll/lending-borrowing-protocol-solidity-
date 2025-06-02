@@ -53,11 +53,19 @@ contract  LendingandBorrowing {
     }
 
     //withdraw the collateral , after one had repaid the loan 
-    // function withdrawCollateral(uint256 amount) external {
-    //     require(amount <= collateralBalances[msg.sender]);
-    //     uint256 finalAmount = calculateInterestAccrued(msg.sender);
+    function withdrawCollateral(uint256 amount) external {
+        require(amount <= collateralBalances[msg.sender]);
+       
+        require(collateralBalances[msg.sender] >= amount );
+        uint256 finalAmount = calculateInterestAccrued(msg.sender);
+        uint256 requiredCollateral = (finalAmount *1000) / collateralFactorBasisPoints;
+        
+        require(requiredCollateral >= collateralBalances[msg.sender] - amount);
+        collateralBalances[msg.sender] -= amount;
+        payable(msg.sender).transfer(amount);
+        emit CollateralWithdrawn(msg.sender, amount);
 
-    // }
+    }
     function borrow(uint256 amount) external {
         require(amount > 0);
         require(address(this).balance >= amount, "Insufficient balance");
